@@ -1,6 +1,24 @@
 import os
+from itertools import accumulate
 
-class ExtractText:
+def char_per_word(words):
+    return [*map(lambda w: len(w)+1, words)]
+
+def word_count(counts:list):
+    return accumulate(counts, lambda x, y: x + y if x + y <= 280 else y)
+    
+def zip_counts(counts:list, accum:iter):
+    return zip(counts, accum)
+
+def slices_idx(pairs:zip):
+    edges = [*filter(lambda p: p[0] == p[1], pairs)] + [-1]
+    return [slice(edges[n], edges[n+1]) for n in range(len(edges)-1)]
+    
+def slice_text(words, slices:list):
+    return [words[s] for s in slices]
+
+
+class TextManipulation:
     def __init__(self, in_path:str, out_path:str):
         self.in_path = in_path
         self.out_path = out_path
@@ -8,15 +26,19 @@ class ExtractText:
     def read_text(self):
         with open(self.in_path, 'r') as txt:
             all_text = txt.read().replace('\n', '')
+        return all_text.split(' ')
 
-            idx = [(n*280, (n+1)*280) for n in range(1+len(all_text)//280)]
-            for i in idx:
-               yield all_text[slice(i[0], i[1])]
-    
+    def process_text(self, itr):
+        w1 = char_per_word(itr)
+        w2 = word_count(w1)
+        w3 = zip_counts(w1, w2)
+        w4 = slices_idx(w3)
+        return slice_text(itr, w4)
+
     def save_text(self, itr):
         with open(self.out_path, 'w') as txt:
             for i in itr:
-                txt.write(i)
+                txt.write(i.join(''))
                 txt.write("\n\n")
 
 if __name__ == '__main__':
