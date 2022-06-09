@@ -2,10 +2,10 @@ import os
 from itertools import accumulate
 
 def char_per_word(words):
-    return [*map(lambda w: len(w)+1, words)]
+    return [len(w)+1 for w in words.split()]
 
 def word_count(counts:list):
-    return accumulate(counts, lambda x, y: x + y if x + y <= 280 else y)
+    return accumulate(counts, lambda x, y: x + y if x + y <= 140 else y)
     
 def zip_counts(counts:list, accum:iter):
     return zip(counts, accum)
