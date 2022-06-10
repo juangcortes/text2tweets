@@ -6,12 +6,13 @@ import pytest
 
 #from click.testing import CliRunner
 
-from text2tweets import char_per_word
-from text2tweets import word_count 
-from text2tweets import slices_idx
+from text2tweets.text2tweets import char_per_word
+from text2tweets.text2tweets import word_count 
+from text2tweets.text2tweets import slices_idx
+from text2tweets.text2tweets import slice_text
 #from text2tweets import cli
 
-TEST_TEXT = "tst1 "*70 + "tst2 "*70
+TEST_TEXT = ("tst1 "*70 + "tst2 "*70).split()
 
 def test_char_per_word():
     result = char_per_word(TEST_TEXT)
@@ -19,19 +20,20 @@ def test_char_per_word():
     
 def test_word_count():
     counts = [5]*140
-    result = word_count(counts)
+    result = [*word_count(counts)]
     wc = [5*i for i in range(1,29)]*5
-    assert list(result) == wc
+    assert result == wc
 
 def test_slices_idx():
-    counts = [5]*140
     accum = [5*i for i in range(1,29)]*5
-    pairs = zip(counts, accum)
+    result = slices_idx(accum)
+    assert result == [(0, 28), (28, 56), (56, 84), (84, 112), (112, -1)]
 
-    result = slices_idx(pairs)
-    tweets = [TEST_TEXT[s] for s in result]
-    assert (set(tweets[0])=={"tst1 "})&(set(tweets[4])=={"tst2 "})&\
-        (set(tweets[2])=={"tst1 ", "tst2 "})
+def test_slice_text():
+    indexes = [(0, 28), (28, 56), (56, 84), (84, 112), (112, -1)]
+    result = slice_text(TEST_TEXT, indexes)
+    assert (set(result[0])=={"tst1"})&(set(result[4])=={"tst2"})&\
+        (set(result[2])=={"tst1", "tst2"})
 
 
 #@pytest.fixture
