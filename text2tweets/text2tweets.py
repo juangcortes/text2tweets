@@ -1,50 +1,67 @@
 import os
 from itertools import accumulate
 
-def char_per_word(words):
-    return [len(w)+1 for w in words.split()]
+def char_per_word(words:list):
+    """Gets a list with strings, returns another list with character counts
+    plus one."""
+    return [len(w)+1 for w in words]
 
 def word_count(counts:list):
-    return accumulate(counts, lambda x, y: x + y if x + y <= 140 else y)
-    
-def zip_counts(counts:list, accum:iter):
-    return zip(counts, accum)
+    """Gets a list with character counts from char_per_word, returns a list 
+    with the accumulated sum if the character count is equal or less to
+    140 or the original number."""
+    return [*accumulate(counts, lambda x, y: x + y if x + y <= 140 else y)]
 
-def slices_idx(pairs:zip):
-    edges = [*filter(lambda p: p[0] == p[1], pairs)] + [-1]
-    return [slice(edges[n], edges[n+1]) for n in range(len(edges)-1)]
-    
+def slices_idx(wc:list):
+    """Get the accumulated counts list from word_count, returns slices with
+    140 characters or less."""
+    end_word = [0]
+    pairs = [(wc[n], wc[n+1]) for n in range(len(wc)-1)]
+    for idx, pair in enumerate(pairs):
+        prv, nxt = pair
+        if prv>nxt:
+            end_word.append(idx+1)
+    end_word.append(-1)
+    return [slice(end_word[n], end_word[n+1]) for n in range(len(end_word)-1)]
+
 def slice_text(words, slices:list):
-    return [words[s] for s in slices]
-
+    """Takes the read text and the slices created in slices_idx, returns a
+    generator with sliced texts."""
+    for s in slices:
+        yield words[s] 
 
 class TextManipulation:
     def __init__(self, in_path:str, out_path:str):
         self.in_path = in_path
         self.out_path = out_path
+        self._text = None
 
     def read_text(self):
         with open(self.in_path, 'r') as txt:
-            all_text = txt.read().replace('\n', '')
-        return all_text.split(' ')
+            self._text = txt.read().replace('\n', ' ').split()
+        return self
 
-    def process_text(self, itr):
-        w1 = char_per_word(itr)
-        w2 = word_count(w1)
-        w3 = zip_counts(w1, w2)
-        w4 = slices_idx(w3)
-        return slice_text(itr, w4)
+    def process_text(self):
+        try:
+            w1 = char_per_word(self._text)
+        except TypeError:
+            raise FileError("You need to read the file first.")
+        else:
+            w2 = word_count(w1)
+            w3 = slices_idx(w2)
+            self._text = slice_text(self._text, w3)
+            return self
 
-    def save_text(self, itr):
-        with open(self.out_path, 'w') as txt:
-            for i in itr:
-                txt.write(i.join(''))
-                txt.write("\n\n")
+    def save_text(self):
+        if self._text:
+            with open(self.out_path, 'w') as txt:
+                for i in self._text:
+                    txt.write(' '.join(i))
+                    txt.write("\n\n")
 
-if __name__ == '__main__':
-    txt = "../tests/input_text.txt"
-    result = "../tests/output_text.txt"
-
-    xt = ExtractText(txt, result)
-    chunks = xt.read_text()
-    xt.save_text(chunks)
+    def save_json(self):
+        if self._text:
+            res = {"generated_tweets":{f"tweet_{idx}": f"{' '.join(i)}" \
+                    for idx, i in enumerate(self._text)}}
+            with open(self.out_path, 'w') as txt:
+                txt.writelines(res)
